@@ -563,7 +563,8 @@ a { color: inherit; text-decoration: none; }
   var CHART_REFRESH_MS = 10000;
   var CHART_CACHE_KEY = "meschange:chart-bar:v1";
   var PRICE_CACHE_KEY = "meschange:product-price:v1";
-  var SYNC_BUY_KEY = "meschange:sync-buy:v1";
+  // نسخهٔ جدید کلید باعث می‌شود تنظیم پیش‌فرض تازه برای کاربران قبلی هم روشن باشد.
+  var SYNC_BUY_KEY = "meschange:sync-buy:v2";
 
   var FA = "۰۱۲۳۴۵۶۷۸۹";
   var faInteger = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0, useGrouping: true });
@@ -587,7 +588,12 @@ a { color: inherit; text-decoration: none; }
   }
 
   function readSyncPreference() {
-    try { return localStorage.getItem(SYNC_BUY_KEY) === "1"; } catch (error) { return false; }
+    try {
+      var stored = localStorage.getItem(SYNC_BUY_KEY);
+      return stored === null ? true : stored === "1";
+    } catch (error) {
+      return true;
+    }
   }
 
   function writeSyncPreference(enabled) {
@@ -880,6 +886,7 @@ a { color: inherit; text-decoration: none; }
   var chartSyncAttempts = 0;
   var volumeStudyRemoved = false;
   var chartPrecisionApplied = false;
+  var chartWatermarkHidden = false;
 
   function formatChartPrice(value) {
     return num(value) === null ? "—" : chartNumber.format(value);
@@ -930,11 +937,34 @@ a { color: inherit; text-decoration: none; }
     chartPrecisionApplied = true;
   }
 
+  async function hideChartWatermark(widget) {
+    if (chartWatermarkHidden) return;
+    try {
+      // API رسمی TradingView؛ هم واترمارک اصلی و هم اجزای متن آن خاموش می‌شوند.
+      var watermark = await widget.tradingView.watermark();
+      var visibility = await watermark.visibility();
+      await visibility.setValue(false);
+
+      var tickerVisibility = await watermark.tickerVisibility();
+      await tickerVisibility.setValue(false);
+
+      var descriptionVisibility = await watermark.descriptionVisibility();
+      await descriptionVisibility.setValue(false);
+
+      var intervalVisibility = await watermark.intervalVisibility();
+      await intervalVisibility.setValue(false);
+      chartWatermarkHidden = true;
+    } catch (error) {
+      // تا آماده‌شدن کامل Charting Library در تلاش بعدی دوباره امتحان می‌شود.
+    }
+  }
+
   async function readLatestDailyBar() {
     var registry = window.BitycleWidget;
     var widget = registry && registry[BITYCLE_WIDGET_ID];
     if (!widget || !widget.tradingView) throw new Error("widget-not-ready");
 
+    await hideChartWatermark(widget);
     var chart = await widget.tradingView.activeChart();
     if (!chart) throw new Error("chart-not-ready");
     await applyWholeTomanPrecision(chart);
