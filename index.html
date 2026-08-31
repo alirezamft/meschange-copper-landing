@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>بازار مس — مس‌چنج</title>
+<link rel="icon" href="taline-logo.png" />
+<style>
+@font-face { font-family: "Dana"; src: url("fonts/Dana-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Dana"; src: url("fonts/Dana-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Dana"; src: url("fonts/Dana-DemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Dana"; src: url("fonts/Dana-Bold.woff2") format("woff2"); font-weight: 700 900; font-display: swap; }
+
+/* ---------- تم روشن ---------- */
+:root {
+  /* پالت رسمی meschange.ir */
+  --copper: #a94f24;
+  --copper-dark: #793314;
+  --paper: #f8f4ee;
+  --ink: #201914;
+  --muted: #73665d;
+  --line: #5937242b;
+  /* مشتق‌شده: کارت فروش = تینت #59372414 روی paper */
+  --sand: #ece5de;
+  --surface: #ffffff;
+  --toolbar: #faf7f2;
+  --chart-bg: #ffffff;
+  --copper-soft: #f2e3d9;
+  --success: #15876d;
+  --danger: #c44f52;
+  --glass: rgba(255, 255, 255, 0.82);
+  --chart-shadow: 0 18px 50px rgba(72, 38, 20, 0.09);
+}
+
+/* اندازهٔ ریشه از ابعاد ستون راست (۵۰٪ عرض × کل ارتفاع) گرفته می‌شود
+   تا کل بلوک قیمت با ظرف خودش مقیاس بگیرد، نه با breakpoint. */
+html { font-size: min(1.35vw, 1.9vh); }
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  color: var(--ink);
+}
+body {
+  overflow: hidden;
+  font-family: "Dana", Tahoma, Arial, sans-serif;
+  font-size: 14px;
+  font-feature-settings: "ss01";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* دو ستون ۵۰٪ / ۵۰٪ — راست: قیمت مس‌چنج، چپ: نمودار بایتکل */
+.wall-layout {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  overflow: hidden;
+  background: #fff;
+}
+.market-stage, .chart-side {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 14px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+.market-stage { padding-left: 7px; }
+.price-column { width: 100%; max-width: 28rem; justify-self: center; }
+.chart-side { padding-right: 7px; }
+
+/* ---------- سمت راست: ستون قیمت ---------- */
+/* همه‌چیز در یک ستون زیر هم؛ کل بلوک در ارتفاع باقی‌مانده وسط‌چین می‌شود */
+.price-column {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  overflow: hidden;
+}
+
+.brand-logo {
+  width: 10rem;
+  height: auto;
+  flex: none;
+  object-fit: contain;
+}
+
+.page-title {
+  margin: 2rem 0 0.15rem;
+  color: var(--copper);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+/* کارت‌های خرید و فروش — پایهٔ مشترک، تفاوت فقط در رنگ */
+.pcard {
+  width: 100%;
+  padding: 1.2rem 2rem;
+  border: 0;
+  border-radius: 1.15rem;
+  box-shadow: none;
+  display: grid;
+  align-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+.pcard.buy { background: var(--copper); color: #ffffff; }
+.pcard.sell { background: var(--sand); color: var(--ink); }
+
+.pcard-label {
+  font-size: 1.7rem;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+.pcard-price {
+  font-size: 2.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  direction: ltr;
+  unicode-bidi: plaintext;
+  transform-origin: center;
+  transition: transform 0.25s ease;
+}
+.pcard-price.flash { transform: scale(1.06); }
+
+/* کارت آخرین آپدیت — نوار باریک که ستون قیمت را می‌بندد */
+.ucard {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.6rem 2.2rem;
+  border-radius: 1.15rem;
+  background: var(--copper-dark);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+.ucard-time { direction: rtl; unicode-bidi: plaintext; }
+
+.site-link {
+  direction: ltr;
+  padding: 0.35rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  color: var(--copper);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1rem 0;
+}
+
+.powered {
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.taline-logo { width: 2.6rem; height: auto; object-fit: contain; }
+
+/* ---------- اودومتر رقم‌ها ---------- */
+.odo { display: inline-flex; align-items: flex-start; direction: ltr; unicode-bidi: isolate; }
+.odo-digit {
+  position: relative;
+  display: inline-block;
+  width: var(--odo-w, 0.62em);
+  height: 1.2em;
+  overflow: hidden;
+}
+.odo-strip { position: absolute; top: 0; left: 0; display: block; width: 100%; will-change: transform; }
+.odo-strip.rolling { transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
+.odo-cell { display: block; width: 100%; height: 1.2em; line-height: 1.2em; text-align: center; }
+.odo-sep { display: inline-block; height: 1.2em; line-height: 1.2em; }
+.odo-probe {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  visibility: hidden;
+  white-space: pre;
+  font-family: "Dana", Tahoma, Arial, sans-serif;
+  font-size: 100px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- سمت چپ: نمودار بایتکل ---------- */
+.chart-card {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(169, 79, 36, 0.10), transparent 34%),
+    var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  box-shadow: var(--chart-shadow);
+}
+.market-panel {
+  position: relative;
+  z-index: 5;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+.market-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.market-identity { min-width: 0; display: flex; align-items: center; gap: 11px; }
+.market-logo-wrap {
+  width: 50px;
+  height: 50px;
+  flex: none;
+  padding: 7px;
+  border: 1px solid rgba(169, 79, 36, 0.18);
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(242,227,217,.78));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 24px rgba(169,79,36,.10);
+  display: grid;
+  place-items: center;
+}
+.market-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
+.market-copy { min-width: 0; display: grid; gap: 3px; }
+.market-kicker { display: flex; align-items: center; gap: 7px; color: var(--copper); font-size: 9px; font-weight: 600; }
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px rgba(21, 135, 109, 0.10);
+}
+.market-name { margin: 0; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.35; }
+.interval-pill {
+  flex: none;
+  padding: 7px 11px;
+  border: 1px solid rgba(169, 79, 36, 0.17);
+  border-radius: 999px;
+  color: var(--copper-dark);
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 10px;
+  font-weight: 600;
+}
+.chart-stats {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 8px;
+}
+.stat-card {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(89, 55, 36, 0.11);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.86);
+}
+.stat-card.primary {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, var(--copper-dark), var(--copper) 72%, #c26c3b);
+  box-shadow: 0 9px 24px rgba(121, 51, 20, 0.17), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.stat-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 500; white-space: nowrap; }
+.stat-card.primary .stat-label { color: rgba(255,255,255,.74); }
+.stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  direction: rtl;
+  white-space: nowrap;
+}
+.stat-card.primary .stat-value { color: #fff; font-size: 17px; }
+.stat-value small { color: var(--muted); font-size: 8px; font-weight: 500; }
+.stat-card.primary .stat-value small { color: rgba(255,255,255,.72); }
+.chart-canvas { position: relative; min-height: 0; background: var(--chart-bg); isolation: isolate; }
+#bitycle-ac-widget, #bitycle-ac-widget iframe { display: block; width: 100% !important; height: 100% !important; border: 0; }
+.chart-state {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background:
+    linear-gradient(110deg, transparent 30%, rgba(255,255,255,.68) 46%, transparent 62%) 0 0 / 220% 100%,
+    var(--chart-bg);
+  font-size: 12px;
+  animation: chart-shimmer 1.5s linear infinite;
+  pointer-events: none;
+}
+.chart-state[hidden] { display: none; }
+@keyframes chart-shimmer { to { background-position: -220% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .odo-strip.rolling { transition: none; }
+  .pcard-price { transition: none; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+}
+</style>
+</head>
+<body>
+<div class="wall-layout">
+
+  <!-- سمت راست: قیمت لحظه‌ای مس از meschange.ir -->
+  <main class="market-stage" dir="rtl">
+    <section class="price-column" aria-label="قیمت لحظه‌ای مس">
+
+      <img class="brand-logo" src="logo.svg" alt="meschange">
+
+      <h1 class="page-title">قیمت لحظه‌ای <span id="product-title">مس</span></h1>
+
+      <div class="pcard buy">
+        <div class="pcard-label">قیمت خرید هر گرم:</div>
+        <div class="pcard-price" id="price-buy">—</div>
+      </div>
+
+      <div class="pcard sell">
+        <div class="pcard-label">قیمت فروش هر گرم:</div>
+        <div class="pcard-price" id="price-sell">—</div>
+      </div>
+
+      <div class="ucard">
+        <span class="ucard-label">آخرین آپدیت :</span>
+        <span class="ucard-time" id="updated-ago">—</span>
+      </div>
+
+      <a class="site-link" href="https://meschange.ir/" target="_blank" rel="noopener" dir="ltr">meschange.ir</a>
+
+      <div class="powered">با افتخار قدرت گرفته از طلاین</div>
+
+      <img class="taline-logo" src="taline-logo.png" alt="طلاین">
+
+    </section>
+  </main>
+
+  <!-- سمت چپ: بازار مس بر حسب تومان، هر گرم -->
+  <section class="chart-side">
+    <section class="chart-card" aria-label="نمودار یک‌روزه قیمت هر گرم مس">
+      <header class="market-panel">
+        <div class="market-row">
+          <div class="market-identity">
+            <span class="market-logo-wrap" aria-hidden="true">
+              <img class="market-logo" src="logo.svg" alt="">
+            </span>
+            <div class="market-copy">
+              <span class="market-kicker"><i class="live-dot"></i> داده زنده بازار</span>
+              <h2 class="market-name">مس‌چنج · مس / تومان</h2>
+            </div>
+          </div>
+          <span class="interval-pill" aria-label="تایم‌فریم نمودار">۱ روزه</span>
+        </div>
+
+        <div class="chart-stats" aria-live="polite">
+          <div class="stat-card primary">
+            <span class="stat-label">آخرین قیمت</span>
+            <strong class="stat-value"><span id="chart-last">—</span><small>تومان / گرم</small></strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">بیشترین ۲۴ ساعت</span>
+            <strong class="stat-value"><span id="chart-high">—</span><small>تومان</small></strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">کمترین ۲۴ ساعت</span>
+            <strong class="stat-value"><span id="chart-low">—</span><small>تومان</small></strong>
+          </div>
+        </div>
+      </header>
+
+      <div class="chart-canvas">
+        <div id="bitycle-ac-widget"></div>
+        <div class="chart-state" id="chart-state">در حال دریافت داده‌های بازار مس…</div>
+      </div>
+    </section>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- تنظیمات ---------- */
+  var PRICE_URL = "https://meschange.ir/api/v1/products/prices";
+  var PRODUCT_KEY = "COPPER";
+  var POLL_MS = 10000;
+  var AGO_TICK_MS = 1000;
+  var PAGE_REFRESH_MS = 30 * 60 * 1000;
+  var ROLL_MS = 420;
+  var STAGGER_MS = 35;
+  var FLASH_MS = 350;
+  var BITYCLE_WIDGET_ID = "bitycle-ac-widget";
+  // پارسر نمادهای ترکیبی بایتکل ثابت یک‌میلیون را مستقیم بارگذاری نمی‌کند؛
+  // دو تقسیم پیاپی بر ۱۰۰۰ دقیقاً معادل تقسیم بر ۱٬۰۰۰٬۰۰۰ است.
+  var BITYCLE_SYMBOL = "brs:LMECAD*nobitex_spot:USDTIRT/1000/1000";
+  var CHART_REFRESH_MS = 10000;
+
+  var FA = "۰۱۲۳۴۵۶۷۸۹";
+  var faInteger = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0, useGrouping: true });
+
+  function byId(id) { return document.getElementById(id); }
+  function num(value) { return typeof value === "number" && isFinite(value) ? value : null; }
+  function toFa(text) { return String(text).replace(/[0-9]/g, function (d) { return FA[+d]; }); }
+  function isFaDigit(ch) { return FA.indexOf(ch) !== -1; }
+
+  /* ---------- عرض رقم را یک‌بار از فونت رندرشده اندازه می‌گیریم ----------
+     ارقام فارسی هم‌عرض نیستند؛ بدون این کار عدد موقع چرخش می‌لرزد. */
+  function measureDigitWidth() {
+    var probe = document.createElement("span");
+    probe.className = "odo-probe";
+    document.body.appendChild(probe);
+    var widest = 0;
+    for (var i = 0; i < 10; i++) {
+      probe.textContent = FA[i];
+      widest = Math.max(widest, probe.getBoundingClientRect().width);
+    }
+    document.body.removeChild(probe);
+    // به‌صورت em ذخیره می‌شود تا با تغییر اندازهٔ ریشه خودش مقیاس بگیرد
+    document.documentElement.style.setProperty("--odo-w", (widest / 100).toFixed(4) + "em");
+  }
+
+  /* ---------- اودومتر ---------- */
+  function buildOdometer(element, chars) {
+    var html = '<span class="odo">';
+    for (var i = 0; i < chars.length; i++) {
+      if (isFaDigit(chars[i])) {
+        html += '<span class="odo-digit"><span class="odo-strip">' +
+                '<span class="odo-cell">' + chars[i] + "</span></span></span>";
+      } else {
+        html += '<span class="odo-sep">' + chars[i] + "</span>";
+      }
+    }
+    element.innerHTML = html + "</span>";
+  }
+
+  function rollDigit(digitNode, from, to, up, delay) {
+    var strip = digitNode.firstChild;
+    var sequence = [from];
+    var cursor = from;
+    var guard = 0;
+    while (cursor !== to && guard++ < 12) {
+      cursor = up ? (cursor + 1) % 10 : (cursor + 9) % 10;
+      sequence.push(cursor);
+    }
+    // بالا رفتن: از بالا به پایین from…to  |  پایین آمدن: to…from
+    if (!up) sequence.reverse();
+
+    var cells = "";
+    for (var i = 0; i < sequence.length; i++) cells += '<span class="odo-cell">' + FA[sequence[i]] + "</span>";
+    strip.innerHTML = cells;
+
+    var travel = (sequence.length - 1) * 1.2;
+    strip.classList.remove("rolling");
+    strip.style.transitionDelay = "0ms";
+    strip.style.transform = up ? "translateY(0)" : "translateY(-" + travel.toFixed(4) + "em)";
+    void strip.offsetHeight;
+    strip.classList.add("rolling");
+    strip.style.transitionDelay = delay + "ms";
+    strip.style.transform = up ? "translateY(-" + travel.toFixed(4) + "em)" : "translateY(0)";
+
+    // پس از پایان چرخش، نوار به یک سلول جمع می‌شود تا DOM سبک بماند
+    clearTimeout(strip.__settle);
+    strip.__settle = setTimeout(function () {
+      strip.classList.remove("rolling");
+      strip.style.transitionDelay = "0ms";
+      strip.style.transform = "translateY(0)";
+      strip.innerHTML = '<span class="odo-cell">' + FA[to] + "</span>";
+    }, delay + ROLL_MS + 40);
+  }
+
+  function setPrice(element, value, rising) {
+    var text = value === null ? "—" : toFa(faInteger.format(value));
+    var previous = element.__odoText;
+    if (previous === text) return;
+
+    var chars = text.split("");
+    var previousChars = previous ? previous.split("") : null;
+    var sameShape = previousChars && previousChars.length === chars.length && element.firstChild;
+
+    if (!sameShape) {
+      if (value === null) { element.textContent = "—"; element.__odoText = text; return; }
+      buildOdometer(element, chars);
+      element.__odoText = text;
+      flash(element);
+      return;
+    }
+
+    var nodes = element.firstChild.children;
+    var stagger = 0;
+    // چیدمان LTR است، پس از راست‌ترین رقم شروع می‌کنیم و به چپ می‌رویم
+    for (var i = chars.length - 1; i >= 0; i--) {
+      if (!isFaDigit(chars[i])) continue;
+      if (chars[i] === previousChars[i]) continue;
+      rollDigit(nodes[i], FA.indexOf(previousChars[i]), FA.indexOf(chars[i]), rising, stagger * STAGGER_MS);
+      stagger++;
+    }
+    element.__odoText = text;
+    flash(element);
+  }
+
+  function flash(element) {
+    element.classList.remove("flash");
+    void element.offsetWidth;
+    element.classList.add("flash");
+    clearTimeout(element.__flash);
+    element.__flash = setTimeout(function () { element.classList.remove("flash"); }, FLASH_MS);
+  }
+
+  /* ---------- وضعیت ---------- */
+  var previous = null;
+  var lastUpdatedAt = null;
+  var failed = false;
+
+  /* ---------- دریافت داده ---------- */
+  function parsePayload(payload) {
+    if (!payload || typeof payload !== "object") return null;
+    var product = payload[PRODUCT_KEY];
+    if (!product) {
+      var keys = Object.keys(payload);
+      if (!keys.length) return null;
+      product = payload[keys[0]];
+    }
+    if (!product || typeof product !== "object") return null;
+    var buy = num(Number(product.buyPrice));
+    var sell = num(Number(product.sellPrice));
+    if (buy === null && sell === null) return null;
+    return {
+      title: typeof product.title === "string" ? product.title : "مس",
+      buy: buy,
+      sell: sell,
+      lastUpdated: product.lastUpdated || null,
+      receivedAt: new Date()
+    };
+  }
+
+  function fetchPrices() {
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, 8000);
+    return fetch(PRICE_URL, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      mode: "cors",
+      credentials: "omit"
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      })
+      .then(function (json) {
+        var parsed = parsePayload(json);
+        if (!parsed) throw new Error("bad payload");
+        return parsed;
+      })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  /* ---------- رندر ---------- */
+  function render(sample) {
+    failed = false;
+    byId("product-title").textContent = sample.title;
+
+    var buyRising = !previous || previous.buy === null || sample.buy === null ? true : sample.buy >= previous.buy;
+    var sellRising = !previous || previous.sell === null || sample.sell === null ? true : sample.sell >= previous.sell;
+    setPrice(byId("price-buy"), sample.buy, buyRising);
+    setPrice(byId("price-sell"), sample.sell, sellRising);
+
+    var stamp = sample.lastUpdated ? new Date(sample.lastUpdated) : sample.receivedAt;
+    lastUpdatedAt = isNaN(stamp) ? sample.receivedAt : stamp;
+    tickAgo();
+
+    previous = sample;
+  }
+
+  function showFailure() {
+    failed = true;
+    if (!previous) byId("updated-ago").textContent = "در دسترس نیست";
+  }
+
+  function tickAgo() {
+    var element = byId("updated-ago");
+    if (!lastUpdatedAt) { element.textContent = failed ? "در دسترس نیست" : "—"; return; }
+    var seconds = Math.max(0, Math.round((Date.now() - lastUpdatedAt.getTime()) / 1000));
+    var phrase;
+    if (seconds < 60) phrase = toFa(seconds) + " ثانیه قبل";
+    else if (seconds < 3600) phrase = toFa(Math.floor(seconds / 60)) + " دقیقه قبل";
+    else phrase = toFa(Math.floor(seconds / 3600)) + " ساعت قبل";
+    element.textContent = phrase;
+  }
+
+  function poll() {
+    fetchPrices().then(render, showFailure).finally(function () {
+      setTimeout(poll, POLL_MS);
+    });
+  }
+
+  // اندازه‌گیری باید پس از واقعاً لود شدن فونت Dana انجام شود؛
+  // document.fonts.ready ممکن است پیش از اعمال فونت resolve شود و
+  // آن‌وقت عرض رقم از فونت جایگزین (Tahoma) خوانده می‌شود.
+  measureDigitWidth();
+  if (document.fonts) {
+    if (document.fonts.load) {
+      document.fonts.load('600 100px "Dana"', FA).then(measureDigitWidth, function () {});
+    }
+    if (document.fonts.ready) document.fonts.ready.then(measureDigitWidth);
+  }
+
+  // «آخرین آپدیت» هر ثانیه از روی lastUpdated آخرین پاسخ API بازمحاسبه می‌شود
+  setInterval(tickAgo, AGO_TICK_MS);
+  poll();
+
+  // رفرش کامل صفحه هر ۳۰ دقیقه تا نمودار و داده‌های بازار هم تازه شوند
+  setTimeout(function () { location.reload(); }, PAGE_REFRESH_MS);
+
+  /* ---------- نمودار بایتکل و OHLC آخرین کندل روزانه ---------- */
+  var chartNumber = new Intl.NumberFormat("fa-IR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    useGrouping: true
+  });
+  var chartSyncAttempts = 0;
+  var volumeStudyRemoved = false;
+  var chartPrecisionApplied = false;
+
+  function formatChartPrice(value) {
+    return num(value) === null ? "—" : chartNumber.format(value);
+  }
+
+  function renderChartBar(bar) {
+    byId("chart-last").textContent = formatChartPrice(bar.close);
+    byId("chart-high").textContent = formatChartPrice(bar.high);
+    byId("chart-low").textContent = formatChartPrice(bar.low);
+    byId("chart-state").hidden = true;
+  }
+
+  async function removeVolumeStudy(chart) {
+    if (volumeStudyRemoved) return;
+    try {
+      var studies = await chart.getAllStudies();
+      var studyCount = await studies.length();
+      for (var i = 0; i < studyCount; i++) {
+        var study = await studies.at(i);
+        var name = await study.name();
+        if (/volume/i.test(String(name))) {
+          var id = await study.id();
+          await chart.removeEntity(id);
+        }
+      }
+      volumeStudyRemoved = true;
+    } catch (error) {
+      // بعضی نسخه‌های Charting Library حجم را جزو سری اصلی می‌دانند؛
+      // studies_overrides پایین، آن مسیر را هم نامرئی می‌کند.
+    }
+  }
+
+  async function applyWholeTomanPrecision(chart) {
+    if (chartPrecisionApplied) return;
+    await chart.applyOverrides({ "mainSeriesProperties.minTick": "1,1,false" });
+    chartPrecisionApplied = true;
+  }
+
+  async function readLatestDailyBar() {
+    var registry = window.BitycleWidget;
+    var widget = registry && registry[BITYCLE_WIDGET_ID];
+    if (!widget || !widget.tradingView) throw new Error("widget-not-ready");
+
+    var chart = await widget.tradingView.activeChart();
+    if (!chart) throw new Error("chart-not-ready");
+    await applyWholeTomanPrecision(chart);
+    await removeVolumeStudy(chart);
+
+    var exported = await chart.exportData({
+      includeTime: true,
+      includeSeries: true,
+      includedStudies: []
+    });
+    var rows = await exported.data();
+    var rowCount = await rows.length();
+    if (!rowCount) throw new Error("no-bars");
+
+    var row = await rows.at(rowCount - 1);
+    var values = await Promise.all([
+      row.at(0),
+      row.at(1),
+      row.at(2),
+      row.at(3),
+      row.at(4)
+    ]);
+    return {
+      time: values[0],
+      open: values[1],
+      high: values[2],
+      low: values[3],
+      close: values[4]
+    };
+  }
+
+  function syncChartStats() {
+    readLatestDailyBar().then(function (bar) {
+      chartSyncAttempts = 0;
+      renderChartBar(bar);
+      setTimeout(syncChartStats, CHART_REFRESH_MS);
+    }).catch(function () {
+      chartSyncAttempts++;
+      // راه‌اندازی اولیهٔ Charting Library ممکن است چند ثانیه طول بکشد.
+      if (chartSyncAttempts < 30) {
+        setTimeout(syncChartStats, 1500);
+      } else {
+        byId("chart-state").hidden = true;
+        byId("chart-last").textContent = "در دسترس نیست";
+        byId("chart-high").textContent = "—";
+        byId("chart-low").textContent = "—";
+      }
+    });
+  }
+
+  function loadBitycleChart() {
+    var config = {
+      id: BITYCLE_WIDGET_ID,
+      theme: "taline",
+      type: "ac",
+      locale: "en",
+      mode: "light",
+      style: "tradingview",
+      datafeed_type: "general",
+      symbol: BITYCLE_SYMBOL,
+      interval: "1D",
+      chart_style: "Candle",
+      disabled_features: [
+        "show_exchange",
+        "header_widget",
+        "left_toolbar",
+        "timeframes_toolbar",
+        "control_bar",
+        "legend_widget",
+        "trading_account_manager",
+        "order_panel",
+        "buy_sell_buttons",
+        "show_logo_on_all_charts",
+        "display_market_status"
+      ],
+      enabled_features: ["complex_symbols"],
+      overrides: {
+        "paneProperties.background": "#ffffff",
+        "paneProperties.vertGridProperties.color": "rgba(89,55,36,0.075)",
+        "paneProperties.horzGridProperties.color": "rgba(89,55,36,0.075)",
+        "mainSeriesProperties.minTick": "1,1,false",
+        "mainSeriesProperties.candleStyle.upColor": "#15876d",
+        "mainSeriesProperties.candleStyle.downColor": "#c44f52",
+        "mainSeriesProperties.candleStyle.borderUpColor": "#15876d",
+        "mainSeriesProperties.candleStyle.borderDownColor": "#c44f52",
+        "mainSeriesProperties.candleStyle.wickUpColor": "#15876d",
+        "mainSeriesProperties.candleStyle.wickDownColor": "#c44f52"
+      },
+      studies_overrides: {
+        "volume.volume.transparency": 100,
+        "volume.showLabelsOnPriceScale": false,
+        "volume.showLegendValues": false
+      },
+      calendar_type: "miladi"
+    };
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src = "https://widget.bitycle.com/static/script/v1/script.js";
+    script.async = true;
+    script.textContent = JSON.stringify(config);
+    script.onload = function () {
+      // نمودار زودتر از API داده دیده می‌شود؛ لودر را مستقل کنار می‌زنیم.
+      setTimeout(function () { byId("chart-state").hidden = true; }, 6000);
+      setTimeout(syncChartStats, 2500);
+    };
+    script.onerror = function () {
+      byId("chart-state").textContent = "دریافت نمودار ناموفق بود؛ اتصال اینترنت را بررسی کنید.";
+    };
+    document.body.appendChild(script);
+  }
+
+  loadBitycleChart();
+})();
+</script>
+</body>
+</html>
