@@ -96,7 +96,11 @@ a { color: inherit; text-decoration: none; }
   height: auto;
   flex: none;
   object-fit: contain;
+  cursor: pointer;
+  border-radius: 1rem;
 }
+.brand-logo:focus-visible,
+.market-logo-wrap:focus-visible { outline: 2px solid var(--copper); outline-offset: 4px; }
 
 .page-title {
   margin: 2rem 0 0.15rem;
@@ -236,6 +240,8 @@ a { color: inherit; text-decoration: none; }
 }
 .market-identity { min-width: 0; display: flex; align-items: center; gap: 11px; }
 .market-logo-wrap {
+  appearance: none;
+  font: inherit;
   width: 50px;
   height: 50px;
   flex: none;
@@ -246,6 +252,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 24px rgba(169,79,36,.10);
   display: grid;
   place-items: center;
+  cursor: pointer;
 }
 .market-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
 .market-copy { min-width: 0; display: grid; gap: 3px; }
@@ -256,6 +263,10 @@ a { color: inherit; text-decoration: none; }
   border-radius: 50%;
   background: var(--success);
   box-shadow: 0 0 0 4px rgba(21, 135, 109, 0.10);
+}
+.live-dot.cached {
+  background: #b87920;
+  box-shadow: 0 0 0 4px rgba(184, 121, 32, 0.11);
 }
 .market-name { margin: 0; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.35; }
 .interval-pill {
@@ -323,6 +334,104 @@ a { color: inherit; text-decoration: none; }
 .chart-state[hidden] { display: none; }
 @keyframes chart-shimmer { to { background-position: -220% 0; } }
 
+/* ---------- تنظیمات مخفی همگام‌سازی ---------- */
+.settings-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.settings-modal[hidden] { display: none; }
+.settings-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(32, 25, 20, 0.28);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+  cursor: default;
+}
+.settings-card {
+  position: relative;
+  width: min(420px, calc(100vw - 40px));
+  padding: 22px;
+  border: 1px solid rgba(169, 79, 36, 0.18);
+  border-radius: 24px;
+  background: rgba(255, 252, 249, 0.96);
+  box-shadow: 0 28px 80px rgba(72, 38, 20, 0.24), inset 0 1px 0 #fff;
+  color: var(--ink);
+}
+.settings-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.settings-head h2 { margin: 0; color: var(--copper-dark); font-size: 20px; font-weight: 700; }
+.settings-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sync-option {
+  margin-top: 18px;
+  padding: 15px;
+  border: 1px solid rgba(89,55,36,.12);
+  border-radius: 16px;
+  background: rgba(255,255,255,.78);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  cursor: pointer;
+}
+.sync-option-copy { display: grid; gap: 5px; }
+.sync-option-copy b { font-size: 14px; font-weight: 700; }
+.sync-option-copy small { color: var(--muted); font-size: 11px; line-height: 1.65; }
+.sync-switch { position: relative; width: 48px; height: 28px; flex: none; }
+.sync-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.sync-switch i {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #d8d0ca;
+  transition: background .2s;
+}
+.sync-switch i::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(32,25,20,.22);
+  transition: transform .2s;
+}
+.sync-switch input:checked + i { background: var(--copper); }
+.sync-switch input:checked + i::after { transform: translateX(-20px); }
+.sync-switch input:focus-visible + i { outline: 2px solid var(--copper); outline-offset: 3px; }
+.settings-price-row {
+  margin-top: 12px;
+  padding: 12px 15px;
+  border-radius: 14px;
+  background: var(--copper-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--copper-dark);
+  font-size: 12px;
+}
+.settings-price-row strong { font-size: 16px; direction: rtl; }
+.settings-status { min-height: 1.5em; margin: 12px 2px 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+
 @media (prefers-reduced-motion: reduce) {
   .odo-strip.rolling { transition: none; }
   .pcard-price { transition: none; }
@@ -337,7 +446,7 @@ a { color: inherit; text-decoration: none; }
   <main class="market-stage" dir="rtl">
     <section class="price-column" aria-label="قیمت لحظه‌ای مس">
 
-      <img class="brand-logo" src="logo.svg" alt="meschange">
+      <img class="brand-logo" id="brand-settings-trigger" src="logo.svg" alt="meschange" role="button" tabindex="0" title="تنظیمات همگام‌سازی">
 
       <h1 class="page-title">قیمت لحظه‌ای <span id="product-title">مس</span></h1>
 
@@ -371,11 +480,11 @@ a { color: inherit; text-decoration: none; }
       <header class="market-panel">
         <div class="market-row">
           <div class="market-identity">
-            <span class="market-logo-wrap" aria-hidden="true">
+            <button class="market-logo-wrap" id="settings-trigger" type="button" aria-label="بازکردن تنظیمات همگام‌سازی" title="تنظیمات همگام‌سازی">
               <img class="market-logo" src="logo.svg" alt="">
-            </span>
+            </button>
             <div class="market-copy">
-              <span class="market-kicker"><i class="live-dot"></i> داده زنده بازار</span>
+              <span class="market-kicker"><i class="live-dot" id="chart-source-dot"></i><span id="chart-source-label">داده زنده بازار</span></span>
               <h2 class="market-name">مس‌چنج · مس / تومان</h2>
             </div>
           </div>
@@ -407,6 +516,33 @@ a { color: inherit; text-decoration: none; }
 
 </div>
 
+<div class="settings-modal" id="settings-modal" hidden>
+  <button class="settings-backdrop" type="button" data-settings-close aria-label="بستن تنظیمات"></button>
+  <section class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-head">
+      <h2 id="settings-title">تنظیمات قیمت خرید</h2>
+      <button class="settings-close" type="button" data-settings-close aria-label="بستن">×</button>
+    </div>
+
+    <label class="sync-option" for="sync-buy-toggle">
+      <span class="sync-option-copy">
+        <b>همگام‌سازی با نمودار</b>
+        <small>در حالت روشن، قیمت خرید هر گرم از آخرین قیمت نمودار گرفته می‌شود.</small>
+      </span>
+      <span class="sync-switch">
+        <input id="sync-buy-toggle" type="checkbox" role="switch">
+        <i aria-hidden="true"></i>
+      </span>
+    </label>
+
+    <div class="settings-price-row">
+      <span>آخرین قیمت ذخیره‌شده نمودار</span>
+      <strong><span id="settings-chart-price">—</span> تومان</strong>
+    </div>
+    <p class="settings-status" id="settings-status"></p>
+  </section>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -425,6 +561,9 @@ a { color: inherit; text-decoration: none; }
   // دو تقسیم پیاپی بر ۱۰۰۰ دقیقاً معادل تقسیم بر ۱٬۰۰۰٬۰۰۰ است.
   var BITYCLE_SYMBOL = "brs:LMECAD*nobitex_spot:USDTIRT/1000/1000";
   var CHART_REFRESH_MS = 10000;
+  var CHART_CACHE_KEY = "meschange:chart-bar:v1";
+  var PRICE_CACHE_KEY = "meschange:product-price:v1";
+  var SYNC_BUY_KEY = "meschange:sync-buy:v1";
 
   var FA = "۰۱۲۳۴۵۶۷۸۹";
   var faInteger = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0, useGrouping: true });
@@ -433,6 +572,74 @@ a { color: inherit; text-decoration: none; }
   function num(value) { return typeof value === "number" && isFinite(value) ? value : null; }
   function toFa(text) { return String(text).replace(/[0-9]/g, function (d) { return FA[+d]; }); }
   function isFaDigit(ch) { return FA.indexOf(ch) !== -1; }
+
+  function readStoredJSON(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeStoredJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) {}
+  }
+
+  function readSyncPreference() {
+    try { return localStorage.getItem(SYNC_BUY_KEY) === "1"; } catch (error) { return false; }
+  }
+
+  function writeSyncPreference(enabled) {
+    try { localStorage.setItem(SYNC_BUY_KEY, enabled ? "1" : "0"); } catch (error) {}
+  }
+
+  function normalizeBar(value) {
+    if (!value || typeof value !== "object") return null;
+    var bar = {
+      time: num(Number(value.time)),
+      open: num(Number(value.open)),
+      high: num(Number(value.high)),
+      low: num(Number(value.low)),
+      close: num(Number(value.close))
+    };
+    return bar.high === null || bar.low === null || bar.close === null ? null : bar;
+  }
+
+  function readCachedChartBar() {
+    var record = readStoredJSON(CHART_CACHE_KEY);
+    var bar = normalizeBar(record && record.bar);
+    return bar ? { bar: bar, savedAt: record.savedAt || null } : null;
+  }
+
+  function saveChartBar(bar) {
+    writeStoredJSON(CHART_CACHE_KEY, { bar: bar, savedAt: new Date().toISOString() });
+  }
+
+  function readCachedPriceSample() {
+    var record = readStoredJSON(PRICE_CACHE_KEY);
+    if (!record || typeof record !== "object") return null;
+    var buy = num(Number(record.buy));
+    var sell = num(Number(record.sell));
+    if (buy === null && sell === null) return null;
+    return {
+      title: typeof record.title === "string" ? record.title : "مس",
+      buy: buy,
+      sell: sell,
+      lastUpdated: record.lastUpdated || record.savedAt || null,
+      receivedAt: new Date(record.savedAt || Date.now())
+    };
+  }
+
+  function savePriceSample(sample) {
+    writeStoredJSON(PRICE_CACHE_KEY, {
+      title: sample.title,
+      buy: sample.buy,
+      sell: sample.sell,
+      lastUpdated: sample.lastUpdated,
+      savedAt: new Date().toISOString()
+    });
+  }
 
   /* ---------- عرض رقم را یک‌بار از فونت رندرشده اندازه می‌گیریم ----------
      ارقام فارسی هم‌عرض نیستند؛ بدون این کار عدد موقع چرخش می‌لرزد. */
@@ -541,6 +748,11 @@ a { color: inherit; text-decoration: none; }
   var previous = null;
   var lastUpdatedAt = null;
   var failed = false;
+  var cachedChartRecord = readCachedChartBar();
+  var latestChartBar = cachedChartRecord ? cachedChartRecord.bar : null;
+  var syncBuyWithChart = readSyncPreference();
+  var lastDisplayedBuy = null;
+  var settingsLastFocus = null;
 
   /* ---------- دریافت داده ---------- */
   function parsePayload(payload) {
@@ -587,20 +799,34 @@ a { color: inherit; text-decoration: none; }
   }
 
   /* ---------- رندر ---------- */
+  function effectiveBuyPrice() {
+    if (syncBuyWithChart && latestChartBar && latestChartBar.close !== null) {
+      return Math.round(latestChartBar.close);
+    }
+    return previous ? previous.buy : null;
+  }
+
+  function renderBuyPrice() {
+    var value = effectiveBuyPrice();
+    var rising = lastDisplayedBuy === null || value === null ? true : value >= lastDisplayedBuy;
+    setPrice(byId("price-buy"), value, rising);
+    lastDisplayedBuy = value;
+    updateSettingsPanel();
+  }
+
   function render(sample) {
     failed = false;
     byId("product-title").textContent = sample.title;
 
-    var buyRising = !previous || previous.buy === null || sample.buy === null ? true : sample.buy >= previous.buy;
     var sellRising = !previous || previous.sell === null || sample.sell === null ? true : sample.sell >= previous.sell;
-    setPrice(byId("price-buy"), sample.buy, buyRising);
+    previous = sample;
+    renderBuyPrice();
     setPrice(byId("price-sell"), sample.sell, sellRising);
 
     var stamp = sample.lastUpdated ? new Date(sample.lastUpdated) : sample.receivedAt;
     lastUpdatedAt = isNaN(stamp) ? sample.receivedAt : stamp;
     tickAgo();
 
-    previous = sample;
   }
 
   function showFailure() {
@@ -620,7 +846,10 @@ a { color: inherit; text-decoration: none; }
   }
 
   function poll() {
-    fetchPrices().then(render, showFailure).finally(function () {
+    fetchPrices().then(function (sample) {
+      savePriceSample(sample);
+      render(sample);
+    }, showFailure).finally(function () {
       setTimeout(poll, POLL_MS);
     });
   }
@@ -638,7 +867,6 @@ a { color: inherit; text-decoration: none; }
 
   // «آخرین آپدیت» هر ثانیه از روی lastUpdated آخرین پاسخ API بازمحاسبه می‌شود
   setInterval(tickAgo, AGO_TICK_MS);
-  poll();
 
   // رفرش کامل صفحه هر ۳۰ دقیقه تا نمودار و داده‌های بازار هم تازه شوند
   setTimeout(function () { location.reload(); }, PAGE_REFRESH_MS);
@@ -657,11 +885,23 @@ a { color: inherit; text-decoration: none; }
     return num(value) === null ? "—" : chartNumber.format(value);
   }
 
-  function renderChartBar(bar) {
+  function setChartSource(isCached) {
+    byId("chart-source-label").textContent = isCached ? "آخرین داده ذخیره‌شده" : "داده زنده بازار";
+    byId("chart-source-dot").classList.toggle("cached", !!isCached);
+  }
+
+  function renderChartBar(bar, isCached) {
+    var normalized = normalizeBar(bar);
+    if (!normalized) return;
+    latestChartBar = normalized;
+    if (!isCached) saveChartBar(normalized);
     byId("chart-last").textContent = formatChartPrice(bar.close);
     byId("chart-high").textContent = formatChartPrice(bar.high);
     byId("chart-low").textContent = formatChartPrice(bar.low);
+    setChartSource(!!isCached);
     byId("chart-state").hidden = true;
+    if (syncBuyWithChart) renderBuyPrice();
+    updateSettingsPanel();
   }
 
   async function removeVolumeStudy(chart) {
@@ -726,10 +966,61 @@ a { color: inherit; text-decoration: none; }
     };
   }
 
+  /* ---------- پنل مخفی همگام‌سازی ---------- */
+  function updateSettingsPanel() {
+    var toggle = byId("sync-buy-toggle");
+    if (!toggle) return;
+    toggle.checked = syncBuyWithChart;
+    byId("settings-chart-price").textContent = latestChartBar ? formatChartPrice(latestChartBar.close) : "—";
+    if (syncBuyWithChart && latestChartBar) {
+      byId("settings-status").textContent = "همگام‌سازی روشن است؛ قیمت خرید از آخرین قیمت نمودار به‌روزرسانی می‌شود.";
+    } else if (syncBuyWithChart) {
+      byId("settings-status").textContent = "همگام‌سازی روشن است و پس از دریافت اولین دادهٔ نمودار اعمال می‌شود.";
+    } else {
+      byId("settings-status").textContent = "همگام‌سازی خاموش است؛ قیمت خرید از API مس‌چنج نمایش داده می‌شود.";
+    }
+  }
+
+  function openSettings() {
+    settingsLastFocus = document.activeElement;
+    byId("settings-modal").hidden = false;
+    updateSettingsPanel();
+    byId("sync-buy-toggle").focus();
+  }
+
+  function closeSettings() {
+    byId("settings-modal").hidden = true;
+    if (settingsLastFocus && settingsLastFocus.focus) settingsLastFocus.focus();
+  }
+
+  function initializeSettings() {
+    byId("settings-trigger").addEventListener("click", openSettings);
+    var brandTrigger = byId("brand-settings-trigger");
+    brandTrigger.addEventListener("click", openSettings);
+    brandTrigger.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openSettings();
+      }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-settings-close]"), function (button) {
+      button.addEventListener("click", closeSettings);
+    });
+    byId("sync-buy-toggle").addEventListener("change", function () {
+      syncBuyWithChart = this.checked;
+      writeSyncPreference(syncBuyWithChart);
+      renderBuyPrice();
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && !byId("settings-modal").hidden) closeSettings();
+    });
+    updateSettingsPanel();
+  }
+
   function syncChartStats() {
     readLatestDailyBar().then(function (bar) {
       chartSyncAttempts = 0;
-      renderChartBar(bar);
+      renderChartBar(bar, false);
       setTimeout(syncChartStats, CHART_REFRESH_MS);
     }).catch(function () {
       chartSyncAttempts++;
@@ -738,14 +1029,23 @@ a { color: inherit; text-decoration: none; }
         setTimeout(syncChartStats, 1500);
       } else {
         byId("chart-state").hidden = true;
-        byId("chart-last").textContent = "در دسترس نیست";
-        byId("chart-high").textContent = "—";
-        byId("chart-low").textContent = "—";
+        if (latestChartBar) {
+          setChartSource(true);
+        } else {
+          byId("chart-last").textContent = "در دسترس نیست";
+          byId("chart-high").textContent = "—";
+          byId("chart-low").textContent = "—";
+        }
       }
     });
   }
 
   function loadBitycleChart() {
+    if (location.protocol === "file:") {
+      byId("chart-state").hidden = false;
+      byId("chart-state").textContent = "برای نمایش نمودار، فایل «بازکردن-مس‌چنج.command» را اجرا کنید.";
+      return;
+    }
     var config = {
       id: BITYCLE_WIDGET_ID,
       theme: "taline",
@@ -801,11 +1101,21 @@ a { color: inherit; text-decoration: none; }
       setTimeout(syncChartStats, 2500);
     };
     script.onerror = function () {
-      byId("chart-state").textContent = "دریافت نمودار ناموفق بود؛ اتصال اینترنت را بررسی کنید.";
+      if (latestChartBar) {
+        byId("chart-state").hidden = true;
+        setChartSource(true);
+      } else {
+        byId("chart-state").textContent = "دریافت نمودار ناموفق بود؛ اتصال اینترنت را بررسی کنید.";
+      }
     };
     document.body.appendChild(script);
   }
 
+  initializeSettings();
+  var cachedPriceSample = readCachedPriceSample();
+  if (cachedPriceSample) render(cachedPriceSample);
+  if (latestChartBar) renderChartBar(latestChartBar, true);
+  poll();
   loadBitycleChart();
 })();
 </script>
